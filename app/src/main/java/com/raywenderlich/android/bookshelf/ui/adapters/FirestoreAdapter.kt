@@ -55,7 +55,28 @@ abstract class FirestoreAdapter<VH : RecyclerView.ViewHolder?>(
   }
 
   override fun onEvent(documentSnapshots: QuerySnapshot?, error: FirebaseFirestoreException?) {
-    // TODO: Implement onEvent
+    if(error != null){
+      Log.w(TAG, "OnEvent: error", error)
+      onError(error)
+      return
+    }
+
+    if(documentSnapshots == null) return
+
+    for(change in documentSnapshots.documentChanges){
+      when(change.type){
+        DocumentChange.Type.ADDED -> {
+          Log.i("Document Change", "Document added")
+          onDocumentAdded(change)
+        }
+        DocumentChange.Type.MODIFIED -> {
+          Log.i("Document Change", "Document modifid")
+        }
+        DocumentChange.Type.REMOVED ->{
+          Log.i("Document Change", "Document removed")
+        }
+      }
+    }
   }
 
   fun setQuery(query: Query?) {
@@ -69,7 +90,7 @@ abstract class FirestoreAdapter<VH : RecyclerView.ViewHolder?>(
     // Listen to new query
     this.query = query
 
-    // TODO: Call startListening()
+    startListening()
   }
 
   fun getSnapshot(index: Int): DocumentSnapshot {
@@ -77,11 +98,13 @@ abstract class FirestoreAdapter<VH : RecyclerView.ViewHolder?>(
   }
 
   private fun onDocumentAdded(change: DocumentChange) {
-    // TODO: Implement onDocumentAdded
+    snapshots.add(change.newIndex, change.document)
+    notifyItemInserted(change.newIndex)
   }
 
   private fun onDocumentModified(change: DocumentChange) {
-    // TODO: Implement onDocumentModified
+//    snapshots.add(change.newIndex, change.document)
+//    notifyItemMoved(change.newIndex)
   }
 
   private fun onDocumentRemoved(change: DocumentChange) {
@@ -89,7 +112,9 @@ abstract class FirestoreAdapter<VH : RecyclerView.ViewHolder?>(
   }
 
   fun startListening() {
-    // TODO: Implement
+    if(query != null && registration == null){
+      registration = query?.addSnapshotListener(this)
+    }
   }
 
   fun stopListening() {
